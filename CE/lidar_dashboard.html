@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LiDAR Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    padding: 24px;
+    min-height: 100vh;
+  }
+  h1 { font-size: 18px; font-weight: 500; margin-bottom: 20px; color: #fff; }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .stat {
+    background: #1a1d27;
+    border: 0.5px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+  .stat-label { font-size: 12px; color: #888; margin-bottom: 6px; }
+  .stat-value { font-size: 22px; font-weight: 500; }
+  .chart-wrap {
+    background: #1a1d27;
+    border: 0.5px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 20px;
+    position: relative;
+    height: 420px;
+  }
+  #status {
+    position: absolute;
+    top: 16px; right: 16px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #555;
+  }
+  .dot.connected { background: #1D9E75; }
+  .dot.error     { background: #E24B4A; }
+  .legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 14px;
+    font-size: 12px;
+    color: #888;
+    justify-content: center;
+  }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<h1>LiDAR polar histogram — live</h1>
+
+<div class="stats">
+  <div class="stat">
+    <div class="stat-label">Front</div>
+    <div class="stat-value" id="v-front" style="color:#1D9E75;">—</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Left</div>
+    <div class="stat-value" id="v-left" style="color:#378ADD;">—</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Right</div>
+    <div class="stat-value" id="v-right" style="color:#378ADD;">—</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Action</div>
+    <div class="stat-value" id="v-action" style="font-size:15px;">—</div>
+  </div>
+</div>
+
+<div class="chart-wrap">
+  <div id="status">
+    <div class="dot" id="dot"></div>
+    <span id="status-text">connecting...</span>
+  </div>
+  <canvas id="polarChart" role="img" aria-label="Polar histogram of LiDAR obstacle density in 36 sectors">Live LiDAR sector data.</canvas>
+</div>
+
+<div class="legend">
+  <span><span class="legend-dot" style="background:#1D9E75;"></span>clear</span>
+  <span><span class="legend-dot" style="background:#EF9F27;"></span>caution</span>
+  <span><span class="legend-dot" style="background:#E24B4A;"></span>blocked</span>
+</div>
+
+<script>
+const SECTORS = 36;
+const THRESH  = 0.5;
+
+const chart = new Chart(document.getElementById('polarChart'), {
+  type: 'polarArea',
+  data: {
+    labels: Array.from({length: SECTORS}, (_, i) => `${(i * 10).toFixed(0)}\u00b0`),
+    datasets: [{
+      data: Array(SECTORS).fill(0),
+      backgroundColor: Array(SECTORS).fill('rgba(80,80,80,0.4)'),
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.08)'
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: {
+      callbacks: { label: ctx => ` density: ${ctx.raw.toFixed(2)}` }
+    }},
+    scales: { r: {
+      min: 0, max: 1,
+      ticks: { display: false },
+      grid: { color: 'rgba(255,255,255,0.07)' },
+      pointLabels: {
+        display: true,
+        font: { size: 11 },
+        color: 'rgba(255,255,255,0.35)',
+        callback: (_, i) => {
+          const d = i * 10;
+          if (d === 0)   return 'FRONT';
+          if (d === 90)  return 'LEFT';
+          if (d === 180) return 'BACK';
+          if (d === 270) return 'RIGHT';
+          return '';
+        }
+      }
+    }}
+  }
+});
+
+function sectorColor(density) {
+  if (density >= 0.7) return 'rgba(226,75,74,0.7)';
+  if (density >= 0.4) return 'rgba(239,159,39,0.7)';
+  return 'rgba(29,158,117,0.7)';
+}
+
+function updateStats(sectors) {
+  const front = sectors.slice(0, 2).concat(sectors.slice(34)).reduce((a,b) => Math.max(a,b), 0);
+  const left  = sectors.slice(8, 11).reduce((a,b) => Math.max(a,b), 0);
+  const right = sectors.slice(26, 29).reduce((a,b) => Math.max(a,b), 0);
+
+  const toMetres = d => d === 0 ? '&gt;3.5m' : (3.5 * (1 - d)).toFixed(2) + 'm';
+
+  document.getElementById('v-front').innerHTML = toMetres(front);
+  document.getElementById('v-left').innerHTML  = toMetres(left);
+  document.getElementById('v-right').innerHTML = toMetres(right);
+
+  let action, color;
+  const frontM = 3.5 * (1 - front);
+  const leftM  = 3.5 * (1 - left);
+  const rightM = 3.5 * (1 - right);
+
+  if (frontM > THRESH)       { action = 'move forward'; color = '#1D9E75'; }
+  else if (rightM > leftM)   { action = 'turn right';   color = '#378ADD'; }
+  else                       { action = 'turn left';    color = '#EF9F27'; }
+
+  const el = document.getElementById('v-action');
+  el.textContent = action;
+  el.style.color = color;
+}
+
+function connect() {
+  const dot  = document.getElementById('dot');
+  const text = document.getElementById('status-text');
+  const ws   = new WebSocket('ws://localhost:8765');
+
+  ws.onopen = () => {
+    dot.className  = 'dot connected';
+    text.textContent = 'connected';
+  };
+
+  ws.onmessage = (e) => {
+    const sectors = JSON.parse(e.data);
+    chart.data.datasets[0].data = sectors;
+    chart.data.datasets[0].backgroundColor = sectors.map(sectorColor);
+    chart.update('none');
+    updateStats(sectors);
+  };
+
+  ws.onclose = () => {
+    dot.className  = 'dot error';
+    text.textContent = 'disconnected — retrying...';
+    setTimeout(connect, 2000);
+  };
+
+  ws.onerror = () => {
+    dot.className  = 'dot error';
+    text.textContent = 'cannot reach ws://localhost:8765';
+  };
+}
+
+connect();
+</script>
+</body>
+</html>
