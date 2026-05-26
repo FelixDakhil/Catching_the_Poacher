@@ -52,6 +52,11 @@ FIXED_LINEAR_VEL    = 0.15   # m/s  – constant forward speed
 MAX_ANGULAR_VEL     = 2.84   # rad/s
 ARRIVAL_RADIUS      = 0.20   # m – goal considered reached inside this distance
 
+# A new sector must beat the previously chosen one by more than this many
+# sectors before the planner switches.  2 sectors = 10° at 5°/sector.
+# Raise to 3 if oscillation persists; lower to 1 if obstacle reaction feels slow.
+VFH_STICKY_SECTORS  = 2
+
 
 # ===========================================================================
 # Pure VFH+ implementation  (no ROS dependencies)
@@ -61,29 +66,34 @@ class VFHPlanner:
 
     def __init__(
         self,
-        alpha_deg:     float = VFH_ALPHA,
-        threshold:     float = VFH_THRESHOLD,
-        smooth_window: int   = VFH_SMOOTH_WIN,
-        d_max:         float = VFH_D_MAX,
-        robot_radius:  float = VFH_ROBOT_RADIUS,
-        safety_dist:   float = VFH_SAFETY_DIST,
-        fanout_dist:   float = VFH_FANOUT_DIST,
-        a:             float = VFH_A,
-        b:             float = VFH_B,
-        fixed_speed:   float = FIXED_LINEAR_VEL,
-        max_angular:   float = MAX_ANGULAR_VEL,
+        alpha_deg:      float = VFH_ALPHA,
+        threshold:      float = VFH_THRESHOLD,
+        smooth_window:  int   = VFH_SMOOTH_WIN,
+        d_max:          float = VFH_D_MAX,
+        robot_radius:   float = VFH_ROBOT_RADIUS,
+        safety_dist:    float = VFH_SAFETY_DIST,
+        fanout_dist:    float = VFH_FANOUT_DIST,
+        a:              float = VFH_A,
+        b:              float = VFH_B,
+        fixed_speed:    float = FIXED_LINEAR_VEL,
+        max_angular:    float = MAX_ANGULAR_VEL,
+        sticky_sectors: int   = VFH_STICKY_SECTORS,
     ) -> None:
-        self.alpha        = math.radians(alpha_deg)
-        self.threshold    = threshold
-        self.smooth_w     = smooth_window
-        self.d_max        = d_max
-        self.a            = a
-        self.b            = b
-        self.fixed_speed  = fixed_speed
-        self.max_angular  = max_angular
-        self.r_enlarged   = robot_radius + safety_dist
-        self.fanout_dist  = fanout_dist
-        self.num_sectors  = max(1, round(2 * math.pi / self.alpha))
+        self.alpha          = math.radians(alpha_deg)
+        self.threshold      = threshold
+        self.smooth_w       = smooth_window
+        self.d_max          = d_max
+        self.a              = a
+        self.b              = b
+        self.fixed_speed    = fixed_speed
+        self.max_angular    = max_angular
+        self.r_enlarged     = robot_radius + safety_dist
+        self.fanout_dist    = fanout_dist
+        self.num_sectors    = max(1, round(2 * math.pi / self.alpha))
+        self.sticky_sectors = sticky_sectors
+
+        # Sector chosen last cycle; None until first decision
+        self._prev_sector: int | None = None
 
     # ------------------------------------------------------------------
     def compute(
@@ -97,7 +107,7 @@ class VFHPlanner:
         hist_smooth = self._smooth(hist)
         binary      = [1 if h > self.threshold else 0 for h in hist_smooth]
         valleys     = self._find_valleys(binary)
-        best_dir    = self._select_direction(valleys, goal_heading)
+        best_dir    = self._select_direction(valleys, goal_heading, binary)
         return self._to_velocities(best_dir)
 
     # ------------------------------------------------------------------
@@ -119,20 +129,13 @@ class VFHPlanner:
             beam_angle = math.atan2(math.sin(beam_angle), math.cos(beam_angle))
             center_s   = int((beam_angle + math.pi) / self.alpha) % self.num_sectors
 
-            # Magnitude: squared-inverse decay so only close obstacles
-            # (d ≈ r_enlarged) approach 1.0 and exceed the threshold.
-            # A wall at 1 m with r_enlarged=0.38 gives (0.38/1.0)² = 0.14,
-            # which is below the 0.20 threshold → not blocked unless closer.
             magnitude = min((self.r_enlarged / max(d, 0.01)) ** 2, 1.0)
 
             if d < self.r_enlarged:
-                # Inside safety bubble – block the full ring
                 for s in range(self.num_sectors):
                     hist[s] = max(hist[s], magnitude)
 
             elif d < self.fanout_dist:
-                # Close enough that robot body width matters: fan out across
-                # all sectors the robot would physically reach at this distance
                 half_width = math.asin(min(self.r_enlarged / d, 1.0))
                 n_spread   = max(1, math.ceil(half_width / self.alpha))
                 for offset in range(-n_spread, n_spread + 1):
@@ -140,7 +143,6 @@ class VFHPlanner:
                     hist[s] = max(hist[s], magnitude)
 
             else:
-                # Far away: centre sector only, magnitude already low
                 hist[center_s] = max(hist[center_s], magnitude)
 
         return hist
@@ -165,7 +167,7 @@ class VFHPlanner:
         n        = len(binary)
         valleys  = []
         start    = None
-        extended = binary + binary   # handle wrap-around
+        extended = binary + binary
 
         for i in range(2 * n):
             if extended[i] == 0 and start is None:
@@ -191,12 +193,21 @@ class VFHPlanner:
         self,
         valleys:      list[tuple[int, int]],
         goal_heading: float,
+        binary:       list[int],
     ) -> float | None:
         if not valleys:
+            self._prev_sector = None
             return None
 
         goal_sector = int((goal_heading + math.pi) / self.alpha) % self.num_sectors
-        best_dir    = None
+
+        # Previous sector is only sticky if it is still in a free valley
+        prev_still_free = (
+            self._prev_sector is not None
+            and binary[self._prev_sector] == 0
+        )
+
+        best_sector = None
         best_cost   = float("inf")
 
         for v_start, v_end in valleys:
@@ -207,19 +218,33 @@ class VFHPlanner:
 
             for s in sectors:
                 diff = abs(s - goal_sector)
-                diff = min(diff, self.num_sectors - diff)
-                if diff < best_cost:
-                    best_cost = diff
-                    best_dir  = self._sector_to_angle(s)
+                cost = min(diff, self.num_sectors - diff)
 
-        return best_dir
+                # Give the previous sector a discount: a new candidate must
+                # beat it by more than sticky_sectors to take over
+                if prev_still_free and s == self._prev_sector:
+                    cost = max(0, cost - self.sticky_sectors)
+
+                if cost < best_cost:
+                    best_cost   = cost
+                    best_sector = s
+
+        if best_sector is None:
+            return None
+
+        self._prev_sector = best_sector
+        return self._sector_to_angle(best_sector)
 
     # ------------------------------------------------------------------
     # Velocity output
     # ------------------------------------------------------------------
     def _to_velocities(self, direction: float | None) -> tuple[float, float]:
         if direction is None:
-            return 0.0, self.max_angular * 0.6
+            # Histogram fully saturated – no free valley found.
+            # Drive forward slowly toward the goal; act_node's brake will
+            # stop linear if there is a genuine imminent collision, but we
+            # must not zero linear here or the robot spins forever.
+            return self.fixed_speed * 0.5, self.max_angular * 0.3
 
         err         = math.atan2(math.sin(direction), math.cos(direction))
         angular_vel = float(np.clip(2.0 * err, -self.max_angular, self.max_angular))
@@ -248,21 +273,23 @@ class PlanNode(Node):
         self.declare_parameter("fixed_speed",    FIXED_LINEAR_VEL)
         self.declare_parameter("max_angular",    MAX_ANGULAR_VEL)
         self.declare_parameter("arrival_radius", ARRIVAL_RADIUS)
+        self.declare_parameter("sticky_sectors", VFH_STICKY_SECTORS)
 
         self._arrival_radius = self.get_parameter("arrival_radius").value
 
         self._planner = VFHPlanner(
-            alpha_deg    = self.get_parameter("alpha_deg").value,
-            threshold    = self.get_parameter("threshold").value,
-            smooth_window= self.get_parameter("smooth_window").value,
-            d_max        = self.get_parameter("d_max").value,
-            robot_radius = self.get_parameter("robot_radius").value,
-            safety_dist  = self.get_parameter("safety_dist").value,
-            fanout_dist  = self.get_parameter("fanout_dist").value,
-            a            = self.get_parameter("vfh_a").value,
-            b            = self.get_parameter("vfh_b").value,
-            fixed_speed  = self.get_parameter("fixed_speed").value,
-            max_angular  = self.get_parameter("max_angular").value,
+            alpha_deg     = self.get_parameter("alpha_deg").value,
+            threshold     = self.get_parameter("threshold").value,
+            smooth_window = self.get_parameter("smooth_window").value,
+            d_max         = self.get_parameter("d_max").value,
+            robot_radius  = self.get_parameter("robot_radius").value,
+            safety_dist   = self.get_parameter("safety_dist").value,
+            fanout_dist   = self.get_parameter("fanout_dist").value,
+            a             = self.get_parameter("vfh_a").value,
+            b             = self.get_parameter("vfh_b").value,
+            fixed_speed   = self.get_parameter("fixed_speed").value,
+            max_angular   = self.get_parameter("max_angular").value,
+            sticky_sectors= self.get_parameter("sticky_sectors").value,
         )
 
         # ---- robot state --------------------------------------------------
@@ -340,13 +367,15 @@ class PlanNode(Node):
                     f"Goal reached  ({self._goal_x:.2f}, {self._goal_y:.2f})  "
                     f"dist={dist:.3f} m – publishing stop"
                 )
-                self._goal_active = False
+                self._goal_active         = False
+                self._planner._prev_sector = None
                 self._publish_command(0.0, 0.0)
 
     def _goal_cb(self, msg: Point) -> None:
-        self._goal_x      = msg.x
-        self._goal_y      = msg.y
-        self._goal_active = True
+        self._goal_x               = msg.x
+        self._goal_y               = msg.y
+        self._goal_active          = True
+        self._planner._prev_sector = None   # no sticky bias for a fresh goal
         self.get_logger().info(f"New goal received: ({msg.x:.2f}, {msg.y:.2f})")
 
         vis = PointStamped()
