@@ -1,3 +1,5 @@
+add , commit -m , push
+
 To do list
 
 - Finding out which local navigation algorithm to use
@@ -96,15 +98,23 @@ Future work:
 
 Global planning:
 - We assume that the air density and winds can be ignored which allows us to use a uniform-cost search algorithm, D* Lite
+- we currently assume that all sensors are exact, so that no uncertainty needs to be accounted for (i.e. no Kalman filters or data sampling required)
 
-more do to:
+Questions:
+- Ask if I should include Simultaneous Mapping and Localization (SLAM) (dont think so since everything is perfectly accurate)
+- Should I include talking about the acutal code used, or the code stolen or just mention it in passing
+- 
+
+Issues to write about:
+- VFH+ oscillation (SOLVED)
+- New point translation (SOLVED)
 - 
 
 - make sure the local planner works (done)
 - make a single run file for the local planner (done)
-- implement the global planner 
-- upload this to a github 
-- start on report
-- look over code and make sure it works
-- Look into ray casting
-- Look into how I want to use the point
+- implement the global planner (done)
+- upload this to a github (Done)
+- start on report ()
+- look over code and make sure it works (done)
+- Look into ray casting ()
+- Look into how I want to use the point ()
