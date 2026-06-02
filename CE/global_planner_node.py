@@ -363,8 +363,7 @@ class GlobalPlannerNode(Node):
         self.create_timer(PUBLISH_RATE_S, self._publish_timer_cb)
 
         self.get_logger().info(
-            'GlobalPlannerNode ready\n'
-            '  ros2 topic pub --times 5 /global_goal '
+            '  ros2 topic pub --once /global_goal '
             'geometry_msgs/msg/Point "{x: 3.0, y: 2.0, z: 0.0}"'
         )
 
@@ -408,7 +407,7 @@ class GlobalPlannerNode(Node):
                 nwx, nwy = self._waypoints[self._wp_index]
                 self.get_logger().info(
                     f'Waypoint {self._wp_index+1}/{len(self._waypoints)} '
-                    f'-> ({nwx:.2f}, {nwy:.2f})'
+                    f'({nwx:.2f}, {nwy:.2f})'
                 )
 
     # ── /global_goal ──────────────────────────────────────────────────────────
@@ -421,7 +420,7 @@ class GlobalPlannerNode(Node):
         self.get_logger().info(f'Goal received: ({msg.x:.2f}, {msg.y:.2f})')
 
         if not self._map_loaded:
-            self.get_logger().warn('No costmap yet — will plan when map arrives')
+            self.get_logger().warn('No costmap')
             return
 
         self._spawn_replan()
@@ -448,11 +447,11 @@ class GlobalPlannerNode(Node):
         if not self._map_loaded:
             self._dstar.set_map(cost_grid)
             self._map_loaded = True
-            self.get_logger().info(
-                f'Costmap loaded: {self._map_cols}x{self._map_rows}  '
-                f'res={self._map_res:.3f}m  '
-                f'origin=({self._map_origin_x:.1f}, {self._map_origin_y:.1f})'
-            )
+            #self.get_logger().info(
+            #    f'Costmap loaded: {self._map_cols}x{self._map_rows}  '
+            #    f'res={self._map_res:.3f}m  '
+            #    f'origin=({self._map_origin_x:.1f}, {self._map_origin_y:.1f})'
+            #)
             if self._goal_active:
                 self._spawn_replan()
             return
@@ -469,7 +468,7 @@ class GlobalPlannerNode(Node):
 
     def _spawn_replan(self) -> None:
         if self._planning_now:
-            self.get_logger().info('Planning already running — skipping')
+            #self.get_logger().info('Planning already running — skipping')
             return
         self._planning_now = True
         threading.Thread(target=self._do_replan, daemon=True).start()
@@ -503,18 +502,16 @@ class GlobalPlannerNode(Node):
         # Check cell costs before planning
         sc = float(self._dstar._cost[start_cell[0], start_cell[1]])
         gc = float(self._dstar._cost[goal_cell[0],  goal_cell[1]])
-        print(f'[DEBUG] start cost={sc:.1f}  goal cost={gc:.1f}', flush=True)
 
         if gc >= 1e8:
             self.get_logger().warn(
                 f'Goal cell {goal_cell} is an obstacle (cost={gc:.0f}). '
-                'Move the goal to a free space.'
             )
             return
 
         self.get_logger().info(
-            f'Replanning  start={start_cell} ({sc:.0f})  '
-            f'goal={goal_cell} ({gc:.0f})'
+            f'Replanning  start: {start_cell} ({sc:.0f})  '
+            f'goal: {goal_cell} ({gc:.0f})'
         )
 
         with self._plan_lock:
@@ -523,7 +520,7 @@ class GlobalPlannerNode(Node):
             path_cells = self._dstar.plan()
 
         if not path_cells:
-            self.get_logger().warn('D* Lite: no path found')
+            #self.get_logger().warn('D* Lite: no path found')
             return
 
         self._waypoints = self._cells_to_waypoints(path_cells)

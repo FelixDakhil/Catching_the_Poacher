@@ -24,7 +24,7 @@ Define the problem:
 
 List assumptions:
 - Drone has a variable forward velocity, but should be kept the same
-- Drone doesnt have to interact with the poacher, ergo 2D can be assumed (we also assume objects dont get in way)
+- Drone doesnt have to interact with the poacher, ergo 2D can be assumed (we also assume objects dont get in the way)
 - The environment changes too much for the straight mapping out to be useful
 - The poacher may move when the drone sees it, but wont counteract it (i.e. shoot it)
 - Poacher moves slower than the drone maximum speed
@@ -97,24 +97,85 @@ Future work:
 
 
 Global planning:
-- We assume that the air density and winds can be ignored which allows us to use a uniform-cost search algorithm, D* Lite
+- We assuthat the air density and winds can be ignored which allows us to use a uniform-cost search algorithm, D* Lite
 - we currently assume that all sensors are exact, so that no uncertainty needs to be accounted for (i.e. no Kalman filters or data sampling required)
 
 Questions:
-- Ask if I should include Simultaneous Mapping and Localization (SLAM) (dont think so since everything is perfectly accurate)
+- Ask if I should include Simultaneous Mapping and Localization (SLAM) (dont thinme k so since everything is perfectly accurate)
 - Should I include talking about the acutal code used, or the code stolen or just mention it in passing
 - 
 
 Issues to write about:
-- VFH+ oscillation (SOLVED)
-- New point translation (SOLVED)
-- 
+- Local planner:
+    - VFH+ oscillation (SOLVED)
+    - New point translation (SOLVED)
+- Global planner: 
+    - Mesh prediction (SOLVED)
 
 - make sure the local planner works (done)
 - make a single run file for the local planner (done)
 - implement the global planner (done)
 - upload this to a github (Done)
-- start on report ()
+- start on report (Done)
 - look over code and make sure it works (done)
-- Look into ray casting ()
+- Look into ray casting (moot)
 - Look into how I want to use the point ()
+
+
+
+Report structure:
+1. Introduction (2-4)
+    - Explain the necessity for poacher detection
+    - Explain what the robotics department here is trying to do exactly with the drone
+    - Show the actual drone reference
+    - Give a model of the area, meaning the evironment of the drone and main problem
+    - Define the problem, list assumptions and requirments
+2. Robotics Background (5)
+    - Explain the node system
+    - Explain subsumption and SPA achitectures
+    - Explain the idea of a world map and memory
+    - 
+3. Optimal Search Theory (2-4)
+    - Explain that this is NOT economics search theory
+    - Based on Koopmans Search and Screening
+    - Explain the probability map and whatnot
+4. Robotics Implementation (4-8)
+    - Local Planner implementation
+    - Why VFH+
+    - Issues with oscillation and new point translation
+    - Adjustments for a fixed wing drone
+    - Global Planner implementation
+    - Cost Map implementation and world map
+    - D*Lite and why it was chosen
+5. Search theory implementation and goal (3-5)
+    - 
+6. Goal evaluation (2 - 3)
+    - Looking at KPIs like time to find and whatnot
+
+7. Conclusion (2)
+    - What could be added: Adversarial game theory 
+    - 
+
+Deadlines: 
+    - Presentation 29th
+    - Report around the 27th 
+
+
+Finished Assumptions
+    - Environment has obstacles the drone must navigate around
+    - Environment has negiligible elevation / Drone can compensate
+    - Environment is fenced in, when the fence is broken, the drone is alerted (means we know the starting location of the poacher)
+    - Environment obstacles are either there or non-existent, no viewblocks n shit
+    - Environment is NOT stationary, drone cannot just run on a world map
+    - End result = environment can be approximated by a Gazebo evironment
+    -
+    - Drone is fixed wing
+    - Drone has min velocity
+    - Drone cannot go backwards
+    - Drone has a turning radius 
+    - Drone is equipped with sensory suite
+    - Drone is faster thn its own)
+    - Drone can be approximated in 2d
+    - an the poacher
+    - Drone drone doesnt have to physically interact with the poacher
+    - Drone can maneuver on its own (I just have to tell it the direction, it can acutate o
