@@ -122,6 +122,14 @@ Issues to write about:
 - Look into how I want to use the point ()
 
 
+Last to do thing:
+- Make the drone environment independent
+- Get the subsumption down
+    - Implement optimal search theory
+    - Implement chasing down when seen
+    - Implement circling
+- Make pseudocode for the report
+
 
 Report structure:
 1. Introduction (2-4)
@@ -162,11 +170,13 @@ Deadlines:
 
 
 Finished Assumptions
-    - Environment has obstacles the drone must navigate around
-    - Environment has negiligible elevation / Drone can compensate
-    - Environment is fenced in, when the fence is broken, the drone is alerted (means we know the starting location of the poacher)
-    - Environment obstacles are either there or non-existent, no viewblocks n shit
+    - Environment has no additional human interaction
     - Environment is NOT stationary, drone cannot just run on a world map
+    - Environment has negiligible elevation / Drone can compensate
+    - Environment has obstacles the drone must navigate around
+        - Environment obstacles are either there or non-existent, no viewblocks n shit
+    - Environment is fenced in, when the fence is broken, the drone is alerted (means we know the starting location of the poacher)
+    - This means all animals, their movement and changes can be accounted for as changes the environment
     - End result = environment can be approximated by a Gazebo evironment
     -
     - Drone is fixed wing
@@ -174,8 +184,13 @@ Finished Assumptions
     - Drone cannot go backwards
     - Drone has a turning radius 
     - Drone is equipped with sensory suite
-    - Drone is faster thn its own)
-    - Drone can be approximated in 2d
-    - an the poacher
+    - Drone sensory suite is perfect, with no uncertainty (no SLAM necessary)
+    - Drone can tell what is a poacher
+    - Drone can maneuver on its own (I just have to tell it the direction, it can acutate on its own)
+
     - Drone drone doesnt have to physically interact with the poacher
-    - Drone can maneuver on its own (I just have to tell it the direction, it can acutate o
+    - End result = Drone can be approximated as a 2d turtlebot with constant forward motion
+
+    - Poacher is slower than the drone
+    - Poacher is on foot (no facing, turing radius)
+    - 

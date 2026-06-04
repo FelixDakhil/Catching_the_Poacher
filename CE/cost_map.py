@@ -13,10 +13,8 @@ from std_msgs.msg import Header
 from tf2_ros import TransformBroadcaster, Buffer, TransformListener
 
 
-# ASK ABOUT INFLATION!!!
-
-MAP_WIDTH_M    = 100.0
-MAP_HEIGHT_M   = 100.0
+MAP_WIDTH_M    = 10.0
+MAP_HEIGHT_M   = 10.0
 RESOLUTION     = 0.1     # metres per cell
 
 COST_FREE      = 0.0
@@ -26,7 +24,8 @@ HIT_INCREMENT  = 30.0
 MISS_DECREMENT = 5.0     
 DECAY_RATE     = 0.02    
 
-PUBLISH_RATE_S = 0.2     
+PUBLISH_RATE_S     = 0.2   # robot-facing costmap publish rate (5 Hz)
+VIZ_PUBLISH_RATE_S = 2.0   # RViz2-facing costmap publish rate (0.5 Hz)
 MAX_RANGE_M    = 3.5     # = DEFAULT_MAX_RANGE
 
 MAP_FRAME   = 'map'
@@ -72,7 +71,7 @@ def make_pointcloud2(header: Header, points: list) -> PointCloud2:
     return msg
 
 
-# The acutal node
+# The actual node
 class DynamicCostmapNode(Node):
 
     def __init__(self):
@@ -80,7 +79,7 @@ class DynamicCostmapNode(Node):
 
         self.cols     = int(MAP_WIDTH_M  / RESOLUTION)
         self.rows     = int(MAP_HEIGHT_M / RESOLUTION)
-        self.origin_x = -MAP_WIDTH_M  / 2.0 # -50 on both
+        self.origin_x = -MAP_WIDTH_M  / 2.0  # -50 on both
         self.origin_y = -MAP_HEIGHT_M / 2.0 
         self.costmap  = np.zeros((self.rows, self.cols), dtype=np.float32)
 
@@ -97,19 +96,37 @@ class DynamicCostmapNode(Node):
             depth=1
         )
 
+        # QoS for the RViz2 publisher — RELIABLE with depth 1 matches
+        # RViz2's default subscriber QoS. The slow 1 Hz publish rate is
+        # what prevents the queue from filling up, not the QoS policy.
+        viz_qos = QoSProfile(
+            reliability=QoSReliabilityPolicy.RELIABLE,
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=1
+        )
+
         self.create_subscription(LaserScan, '/scan', self.scan_callback, sensor_qos)
         self.create_subscription(Odometry,  '/odom', self.odom_callback, sensor_qos)
 
-        self.map_pub   = self.create_publisher(OccupancyGrid, '/costmap',    10)
-        self.pose_pub  = self.create_publisher(PoseStamped,   '/drone_pose', 10)
-        self.hits_pub  = self.create_publisher(PointCloud2,   '/scan_hits',  10) #These gotta be the same
+        # /costmap      — RELIABLE, 5 Hz — for global_planner_node and other nodes
+        self.map_pub     = self.create_publisher(OccupancyGrid, '/costmap',     10)
 
-        self.create_timer(PUBLISH_RATE_S, self.publish_all)
+        # /costmap/viz  — BEST_EFFORT, 1 Hz — for RViz2 only
+        self.map_viz_pub = self.create_publisher(OccupancyGrid, '/costmap/viz', viz_qos)
+
+        self.pose_pub  = self.create_publisher(PoseStamped,   '/drone_pose', 10)
+        self.hits_pub  = self.create_publisher(PointCloud2,   '/scan_hits',  10)
+
+        # Two separate timers: fast for the robot stack, slow for RViz2
+        self.create_timer(PUBLISH_RATE_S,     self.publish_all)
+        self.create_timer(VIZ_PUBLISH_RATE_S, self._publish_costmap_viz)
 
         self.get_logger().info(
             f'DynamicCostmapNode ready | '
             f'grid={self.cols}x{self.rows} | res={RESOLUTION}m | '
-            f'frames: {MAP_FRAME} -> {ODOM_FRAME} -> {ROBOT_FRAME}'
+            f'frames: {MAP_FRAME} -> {ODOM_FRAME} -> {ROBOT_FRAME} | '
+            f'costmap -> /costmap ({1/PUBLISH_RATE_S:.0f} Hz) '
+            f'+ /costmap/viz ({1/VIZ_PUBLISH_RATE_S:.0f} Hz for RViz2)'
         )
 
     def world_to_grid(self, wx, wy):
@@ -119,12 +136,11 @@ class DynamicCostmapNode(Node):
             return col, row
         return None
 
-
     def odom_callback(self, msg):
 
         stamp = msg.header.stamp
 
-        #map to odom
+        # map to odom
         map_to_odom = TransformStamped()
         map_to_odom.header.stamp    = stamp
         map_to_odom.header.frame_id = MAP_FRAME
@@ -132,7 +148,7 @@ class DynamicCostmapNode(Node):
         map_to_odom.transform.rotation.w = 1.0
         self.tf_broadcaster.sendTransform(map_to_odom)
 
-        #odom to base_link
+        # odom to base_link
         odom_to_base = TransformStamped()
         odom_to_base.header.stamp    = stamp
         odom_to_base.header.frame_id = ODOM_FRAME
@@ -151,7 +167,7 @@ class DynamicCostmapNode(Node):
             tf = self.tf_buffer.lookup_transform(
                 MAP_FRAME,
                 ROBOT_FRAME,
-                rclpy.time.Time(),      # latest available transform
+                rclpy.time.Time(),
                 timeout=Duration(seconds=0.1)
             )
         except Exception as e:
@@ -217,14 +233,14 @@ class DynamicCostmapNode(Node):
         # time decay
         self.costmap *= (1.0 - DECAY_RATE)
 
-
-    def publish_all(self): # If this fails again, its because the things arent updated
+    def publish_all(self):
+        """Fast timer (5 Hz) — publishes everything the robot stack needs."""
         stamp = self.get_clock().now().to_msg()
         self._publish_costmap(stamp)
         self._publish_drone_pose(stamp)
         self._publish_scan_hits(stamp)
 
-    def _build_grid_msg(self, data: np.ndarray, stamp):
+    def _build_grid_msg(self, data: np.ndarray, stamp) -> OccupancyGrid:
         msg = OccupancyGrid()
         msg.header.stamp              = stamp
         msg.header.frame_id           = MAP_FRAME
@@ -239,7 +255,26 @@ class DynamicCostmapNode(Node):
         return msg
 
     def _publish_costmap(self, stamp):
+        """Publish to /costmap (RELIABLE, 5 Hz) for the robot stack."""
         self.map_pub.publish(self._build_grid_msg(self.costmap, stamp))
+
+    def _publish_costmap_viz(self):
+        """
+        Publish to /costmap/viz for RViz2.
+
+        Uses a zero timestamp (ros::Time(0)) instead of the current clock.
+        This bypasses RViz2's TF-aware message filter entirely — the filter
+        only applies to messages with non-zero stamps because it needs to
+        look up a transform at that exact time. With stamp=0 RViz2 renders
+        the map immediately without waiting for a matching TF entry, which
+        eliminates the 'queue is full' and 'timestamp earlier than TF cache'
+        warnings.
+
+        Point RViz2's Map display at /costmap/viz, not /costmap.
+        """
+        from builtin_interfaces.msg import Time as RosTime
+        zero_stamp = RosTime()   # sec=0, nanosec=0
+        self.map_viz_pub.publish(self._build_grid_msg(self.costmap, zero_stamp))
 
     def _publish_drone_pose(self, stamp):
         if self._odom_tf is None:
