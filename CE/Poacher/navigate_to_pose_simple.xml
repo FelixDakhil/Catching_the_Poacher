@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!--
+  Minimal navigate_to_pose BT with no recovery behaviors.
+  Place in the same folder as the other poacher files and reference
+  it from nav2_poacher_params.yaml.
+-->
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <Sequence name="navigate_to_pose">
+      <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+      <FollowPath path="{path}" controller_id="FollowPath"/>
+    </Sequence>
+  </BehaviorTree>
+</root>
