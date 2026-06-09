@@ -2,50 +2,40 @@
 """
 mission_node.py  –  Subsumption architecture mission controller.
 
-Three behaviours, highest priority suppresses lower:
+Two behaviours run concurrently. The higher-priority one suppresses the lower:
 
-  Layer 3 (HIGH)   –  TRACK
+  Layer 2 (HIGH)  –  TRACK
       Active when /poacher_visible is True.
-      Publishes the poacher's live position directly to /global_goal.
-      Continuously updates LKP while visible.
+      Publishes the poacher's live odometry position directly to /global_goal.
 
-  Layer 2 (MID)    –  GOTO_LKP
-      Active immediately after the poacher disappears.
-      Drives the drone to the last known position.
-      Transitions to SEARCH once within arrival_radius of LKP.
-
-  Layer 1 (LOW)    –  SEARCH
-      Active once the drone has reached the LKP.
-      Maintains a 2-D Gaussian diffusion PDF. Each tick the LiDAR
-      scan is used to erase all PDF cells confirmed empty by line-of-
-      sight (Bayesian update: searched and not found). The highest-
-      probability remaining cell is sent as /global_goal (Stone's rule).
+  Layer 1 (LOW)   –  SEARCH
+      Active when poacher is not visible.
+      Maintains a 2-D Gaussian diffusion PDF over the poacher's last known
+      position. Selects the highest-probability unvisited cell as the search
+      goal (Stone's optimal search rule). Zeroes visited cells on arrival.
 
 Publications
 ------------
   /global_goal        geometry_msgs/Point         → global_planner_node
   /pdf_map            nav_msgs/OccupancyGrid       → RViz (probability map)
   /mission_marker     visualization_msgs/Marker    → RViz (goal arrow)
-  /mission_state      std_msgs/String              → TRACK/GOTO_LKP/SEARCH/INIT
+  /mission_state      std_msgs/String              → debug / logging
 
 Subscriptions
 -------------
   /poacher_visible    std_msgs/Bool
-  /poacher_odom       nav_msgs/Odometry
-  /odom               nav_msgs/Odometry
-  /processed_scan     std_msgs/Float32MultiArray   – for scan-erasure
-  /scan_metadata      std_msgs/Float64MultiArray   – beam geometry
+  /poacher_bearing    std_msgs/Float64
+  /poacher_odom       nav_msgs/Odometry   – poacher pose (from detection node)
+  /odom               nav_msgs/Odometry   – drone pose
 
 Parameters
 ----------
   diffusion_coeff     float   m²/s   spreading rate (default 1.0)
   search_radius       float   m      PDF grid half-size (default 8.0)
   grid_resolution     float   m/cell (default 0.25)
-  arrival_radius      float   m      how close counts as arrived (default 0.5)
+  arrival_radius      float   m      how close counts as "visited" (default 0.5)
   pdf_publish_rate    float   Hz     (default 2.0)
   goal_publish_rate   float   Hz     (default 2.0)
-  poacher_spawn_x/y   float   m      poacher spawn (default 2.0, 0.0)
-  drone_spawn_x/y     float   m      drone spawn   (default -2.0, -0.5)
 """
 
 import math
@@ -58,7 +48,7 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 
 from geometry_msgs.msg import Point, PoseStamped
 from nav_msgs.msg import Odometry, OccupancyGrid, MapMetaData
-from std_msgs.msg import Bool, Float64, Float32MultiArray, Float64MultiArray, String
+from std_msgs.msg import Bool, Float64, String
 from visualization_msgs.msg import Marker
 
 
@@ -68,7 +58,7 @@ from visualization_msgs.msg import Marker
 
 STATE_TRACK  = 'TRACK'
 STATE_SEARCH = 'SEARCH'
-STATE_INIT   = 'INIT'        # no poacher data yet
+STATE_INIT   = 'INIT'      # no poacher data yet
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -126,13 +116,6 @@ class MissionNode(Node):
         self._current_goal: tuple | None = None   # (x, y)
         self._mission_state: str = STATE_INIT
 
-        # Scan state (for PDF erasure)
-        self._ranges:        list[float] = []
-        self._angle_min:     float = 0.0
-        self._angle_inc:     float = math.radians(1.0)
-        self._drone_yaw:     float = 0.0
-        self._scan_ready:    bool  = False
-
         # ── QoS ──────────────────────────────────────────────────────────────
         sensor_qos = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
@@ -146,11 +129,9 @@ class MissionNode(Node):
         )
 
         # ── subscribers ──────────────────────────────────────────────────────
-        self.create_subscription(Bool,              '/poacher_visible', self._visible_cb,  10)
-        self.create_subscription(Odometry,          '/odom',            self._drone_cb,    sensor_qos)
-        self.create_subscription(Odometry,          '/poacher_odom',    self._poacher_cb,  sensor_qos)
-        self.create_subscription(Float32MultiArray, '/processed_scan',  self._scan_cb,     sensor_qos)
-        self.create_subscription(Float64MultiArray, '/scan_metadata',   self._meta_cb,     10)
+        self.create_subscription(Bool,    '/poacher_visible', self._visible_cb,  10)
+        self.create_subscription(Odometry,'/odom',            self._drone_cb,    sensor_qos)
+        self.create_subscription(Odometry,'/poacher_odom',    self._poacher_cb,  sensor_qos)
 
         # ── publishers ───────────────────────────────────────────────────────
         self._goal_pub    = self.create_publisher(Point,        '/global_goal',     reliable_qos)
@@ -190,20 +171,6 @@ class MissionNode(Node):
     def _drone_cb(self, msg: Odometry) -> None:
         self._drone_x = msg.pose.pose.position.x
         self._drone_y = msg.pose.pose.position.y
-        q = msg.pose.pose.orientation
-        self._drone_yaw = math.atan2(
-            2.0 * (q.w * q.z + q.x * q.y),
-            1.0 - 2.0 * (q.y ** 2 + q.z ** 2),
-        )
-
-    def _scan_cb(self, msg: Float32MultiArray) -> None:
-        self._ranges = list(msg.data)
-        self._scan_ready = bool(self._ranges)
-
-    def _meta_cb(self, msg: Float64MultiArray) -> None:
-        if len(msg.data) >= 3:
-            self._angle_min = msg.data[0]
-            self._angle_inc = msg.data[2]
 
     def _poacher_cb(self, msg: Odometry) -> None:
         self._poacher_x = msg.pose.pose.position.x + self._poacher_offset_x
@@ -293,48 +260,7 @@ class MissionNode(Node):
         if total > 1e-9:
             self._pdf /= total   # re-normalise after zeroing
 
-    def _erase_visible_sector(self) -> None:
-        """
-        Bayesian update: for every LiDAR beam, walk along it and zero any
-        PDF cell the beam confirms is empty (beam reached that far without
-        hitting anything). Cells beyond the beam's measured range are left
-        alone — something may be hiding behind the obstacle.
-
-        This collapses the PDF quickly when the drone has clear sightlines
-        across the search area, rather than only erasing cells it physically
-        visits.
-        """
-        if self._pdf is None or not self._scan_ready:
-            return
-
-        changed = False
-        n_beams = len(self._ranges)
-
-        for i, r in enumerate(self._ranges):
-            if r <= 0.0:
-                continue   # invalid beam
-
-            # World-frame direction of this beam
-            beam_angle = self._drone_yaw + self._angle_min + i * self._angle_inc
-
-            # Step along the beam in cell-sized increments
-            steps = int(r / self._res)
-            for s in range(1, steps + 1):
-                wx = self._drone_x + s * self._res * math.cos(beam_angle)
-                wy = self._drone_y + s * self._res * math.sin(beam_angle)
-
-                col = int((wx - self._pdf_origin_x) / self._res)
-                row = int((wy - self._pdf_origin_y) / self._res)
-
-                if 0 <= row < self._pdf_rows and 0 <= col < self._pdf_cols:
-                    if self._pdf[row, col] > 0.0:
-                        self._pdf[row, col] = 0.0
-                        changed = True
-
-        if changed:
-            total = self._pdf.sum()
-            if total > 1e-9:
-                self._pdf /= total
+    def _best_search_goal(self) -> tuple | None:
         """Return world (x, y) of the highest-probability cell."""
         if self._pdf is None:
             return None
@@ -350,10 +276,8 @@ class MissionNode(Node):
 
     def _goal_timer_cb(self) -> None:
         """
-        Subsumption arbiter — three layers, highest wins:
-          Layer 3  TRACK     – poacher visible
-          Layer 2  GOTO_LKP  – heading to last known position
-          Layer 1  SEARCH    – PDF-guided search
+        Subsumption arbiter: Layer 2 (TRACK) suppresses Layer 1 (SEARCH).
+        Publishes /global_goal at every tick.
         """
         if not self._poacher_received:
             self._mission_state = STATE_INIT
@@ -361,34 +285,23 @@ class MissionNode(Node):
             return
 
         if self._visible:
-            # ── Layer 3: TRACK ───────────────────────────────────────────────
+            # ── Layer 2: TRACK ───────────────────────────────────────────────
             self._mission_state = STATE_TRACK
             goal = (self._poacher_x, self._poacher_y)
-
         else:
             # ── Layer 1: SEARCH ──────────────────────────────────────────────
             self._mission_state = STATE_SEARCH
 
-            # Diffuse PDF over elapsed time
+            # Diffuse PDF to reflect elapsed time
             self._diffuse_pdf()
 
-            # Erase cells confirmed empty by current scan (fast collapse)
-            self._erase_visible_sector()
-
-            # Also erase cells immediately around the drone
+            # Mark cells near drone as searched
             self._mark_visited(self._drone_x, self._drone_y)
 
-            # Hold LKP goal until drone arrives — then let PDF pick next target
-            dist_to_lkp = math.hypot(
-                self._drone_x - self._lkp_x,
-                self._drone_y - self._lkp_y,
-            )
-            if dist_to_lkp > self._arr_r:
+            goal = self._best_search_goal()
+            if goal is None:
+                # PDF exhausted – fall back to last known position
                 goal = (self._lkp_x, self._lkp_y)
-            else:
-                goal = self._best_search_goal()
-                if goal is None:
-                    goal = (self._lkp_x, self._lkp_y)
 
         self._current_goal = goal
         self._publish_goal(goal)
@@ -397,7 +310,7 @@ class MissionNode(Node):
 
     def _pdf_timer_cb(self) -> None:
         """Publish the PDF as an OccupancyGrid for RViz."""
-        if self._pdf is None or self._mission_state == STATE_TRACK:
+        if self._pdf is None or self._mission_state != STATE_SEARCH:
             return
         self._publish_pdf()
 
@@ -428,10 +341,10 @@ class MissionNode(Node):
         m.scale.z = 0.0
 
         if self._mission_state == STATE_TRACK:
-            # Green – tracking live poacher
+            # Green arrow
             m.color.r, m.color.g, m.color.b, m.color.a = 0.0, 1.0, 0.2, 0.9
         else:
-            # Yellow – searching (includes heading to LKP)
+            # Yellow arrow
             m.color.r, m.color.g, m.color.b, m.color.a = 1.0, 0.85, 0.0, 0.9
 
         def pt(x, y):
