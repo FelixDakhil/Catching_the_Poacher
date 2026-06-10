@@ -77,6 +77,7 @@ class PoacherTFRelay(Node):
 
         self._tf_pub        = self.create_publisher(TFMessage, '/tf',        100)
         self._tf_static_pub = self.create_publisher(TFMessage, '/tf_static', static_qos)
+        self._odom_pub      = self.create_publisher(Odometry,  '/poacher_odom', 10)
 
         self.create_subscription(
             Odometry, '/poacher/odom', self._odom_cb, sensor_qos
@@ -91,6 +92,10 @@ class PoacherTFRelay(Node):
         )
 
     def _odom_cb(self, msg: Odometry) -> None:
+        # Re-publish as /poacher_odom so mission and detection nodes
+        # receive poacher position regardless of Nav2 or teleop mode.
+        self._odom_pub.publish(msg)
+
         # Dynamic: poacher/odom -> poacher/base_footprint
         t = TransformStamped()
         t.header.stamp    = msg.header.stamp
@@ -132,22 +137,6 @@ class PoacherTFRelay(Node):
         t.transform.translation.z = z
         t.transform.rotation.w    = 1.0
         return t
-
-
-def main(args=None):
-    rclpy.init(args=args)
-    node = PoacherTFRelay()
-    try:
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        node.destroy_node()
-        rclpy.shutdown()
-
-
-if __name__ == '__main__':
-    main()
 
 
 def main(args=None):
