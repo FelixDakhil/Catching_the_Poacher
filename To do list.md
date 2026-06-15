@@ -124,6 +124,8 @@ Issues to write about:
 
 Last to do thing:
 - Make the drone environment independent
+- Implement the poacher
+- Implement the detection algorithm
 - Get the subsumption down
     - Implement optimal search theory
     - Implement chasing down when seen
@@ -132,22 +134,22 @@ Last to do thing:
 
 
 Report structure:
-1. Introduction (2-4)
+1. Introduction (3)
     - Explain the necessity for poacher detection
     - Explain what the robotics department here is trying to do exactly with the drone
     - Show the actual drone reference
     - Give a model of the area, meaning the evironment of the drone and main problem
     - Define the problem, list assumptions and requirments
-2. Robotics Background (5)
+2. Robotics Background (3)
     - Explain the node system
     - Explain subsumption and SPA achitectures
     - Explain the idea of a world map and memory
     - 
-3. Optimal Search Theory (2-4)
+3. Optimal Search Theory (3)
     - Explain that this is NOT economics search theory
     - Based on Koopmans Search and Screening
     - Explain the probability map and whatnot
-4. Robotics Implementation (4-8)
+4. Robotics Implementation (7)
     - Local Planner implementation
     - Why VFH+
     - Issues with oscillation and new point translation
@@ -155,12 +157,12 @@ Report structure:
     - Global Planner implementation
     - Cost Map implementation and world map
     - D*Lite and why it was chosen
-5. Search theory implementation and goal (3-5)
+5. Search theory implementation and goal (6)
     - 
-6. Goal evaluation (2 - 3)
+6. Goal evaluation (2)
     - Looking at KPIs like time to find and whatnot
 
-7. Conclusion (2)
+7. Conclusion (1)
     - What could be added: Adversarial game theory 
     - 
 
@@ -187,10 +189,22 @@ Finished Assumptions
     - Drone sensory suite is perfect, with no uncertainty (no SLAM necessary)
     - Drone can tell what is a poacher
     - Drone can maneuver on its own (I just have to tell it the direction, it can acutate on its own)
-
     - Drone drone doesnt have to physically interact with the poacher
     - End result = Drone can be approximated as a 2d turtlebot with constant forward motion
 
+    - There is 1 poacher
     - Poacher is slower than the drone
     - Poacher is on foot (no facing, turing radius)
-    - 
+    - Poacher does not know he is being followed
+    - Poacher does not fight back against the drone
+    - Poacher does not hide inside evironements
+    - Poacher facing is unknown, even when spotted
+
+Final code improvements: 
+    - Get the PDF to loop a few times
+    - Get some preset paths for the poacher
+    - Get a counter for the amount of emergency stops
+    - Tweak the speed of the poacher (Nav2)
+    - Tweak the speed of the poacher (teleop)
+    - Get a start up everything file
+    - Cut out only the detection range of the probability density function
