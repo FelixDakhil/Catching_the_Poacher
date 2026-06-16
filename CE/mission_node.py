@@ -53,9 +53,25 @@ from nav_msgs.msg import Odometry, OccupancyGrid
 from std_msgs.msg import Bool, String, Float32MultiArray, Float64MultiArray
 from visualization_msgs.msg import Marker
 
-# ── Arena hard bounds ─────────────────────────────────────────────────────────
-ARENA_X_MIN, ARENA_X_MAX =  0.0,  3.5
-ARENA_Y_MIN, ARENA_Y_MAX = -0.5,  2.0
+# ── Arena bounds (x=right+, y=up+) ──────────────────────────────────────────
+# (0,0) is near the bottom-left of the arena.
+# Drone spawns at (0,0). Poacher spawns at (4.0, 0.5).
+# Arena spans roughly x: -0.5 to 5.0,  y: -2.0 to 2.5
+ARENA_X_MIN, ARENA_X_MAX = -0.5,  4.5
+ARENA_Y_MIN, ARENA_Y_MAX = -2.0,  3.0
+
+def _in_arena(wx: float, wy: float) -> bool:
+    """Return True if (wx, wy) is inside the hexagonal arena."""
+    if not (ARENA_X_MIN <= wx <= ARENA_X_MAX
+            and ARENA_Y_MIN <= wy <= ARENA_Y_MAX):
+        return False
+    # Diagonal corner cuts to approximate hexagon shape
+    CLIP = 1.5
+    if (wx - ARENA_X_MIN) + (wy - ARENA_Y_MIN) < CLIP: return False  # bottom-left
+    if (wx - ARENA_X_MIN) + (ARENA_Y_MAX - wy) < CLIP: return False  # top-left
+    if (ARENA_X_MAX - wx) + (wy - ARENA_Y_MIN) < CLIP: return False  # bottom-right
+    if (ARENA_X_MAX - wx) + (ARENA_Y_MAX - wy) < CLIP: return False  # top-right
+    return True
 
 # ── Costmap thresholds ────────────────────────────────────────────────────────
 COST_OBS_MIN = 50.0
@@ -77,14 +93,15 @@ class MissionNode(Node):
         self.declare_parameter('arrival_radius',          0.5)
         self.declare_parameter('goal_publish_rate',       2.0)
         self.declare_parameter('diffusion_coeff',         0.004)
-        self.declare_parameter('search_radius',           2.5)
+        self.declare_parameter('search_radius',           5.0)
         self.declare_parameter('grid_resolution',         0.1)
         self.declare_parameter('max_range',               3.5)
         self.declare_parameter('scan_clear_range',        1.0)
-        self.declare_parameter('poacher_spawn_x',         2.0)
-        self.declare_parameter('poacher_spawn_y',         0.0)
-        self.declare_parameter('drone_spawn_x',          -2.0)
-        self.declare_parameter('drone_spawn_y',          -0.5)
+        self.declare_parameter('pdf_search_timeout',      30.0)  # seconds before forcing waypoint switch
+        self.declare_parameter('poacher_spawn_x',         4.0)
+        self.declare_parameter('poacher_spawn_y',         0.5)
+        self.declare_parameter('drone_spawn_x',           0.0)
+        self.declare_parameter('drone_spawn_y',           0.0)
 
         self._arr_r     = self.get_parameter('arrival_radius').value
         goal_hz         = self.get_parameter('goal_publish_rate').value
@@ -92,7 +109,8 @@ class MissionNode(Node):
         self._radius    = self.get_parameter('search_radius').value
         self._res       = self.get_parameter('grid_resolution').value
         self._max_range        = self.get_parameter('max_range').value
-        self._scan_clear_range = self.get_parameter('scan_clear_range').value
+        self._scan_clear_range  = self.get_parameter('scan_clear_range').value
+        self._pdf_search_timeout = self.get_parameter('pdf_search_timeout').value
 
         self._poacher_offset_x = (self.get_parameter('poacher_spawn_x').value
                                  - self.get_parameter('drone_spawn_x').value)
@@ -128,7 +146,8 @@ class MissionNode(Node):
         self._pdf_rows:      int   = 0
         self._pdf_cols:      int   = 0
         self._pdf_goal:      tuple | None = None
-        self._last_diffuse_t: float = 0.0   # current committed PDF goal
+        self._last_diffuse_t: float = 0.0
+        self._pdf_search_start_t: float = 0.0  # when PDF search phase began   # current committed PDF goal
 
         # ── scan state ───────────────────────────────────────────────────────
         self._ranges:     list[float] = []
@@ -208,6 +227,7 @@ class MissionNode(Node):
             self.get_logger().info(
                 f'Poacher confirmed LOST at LKP ({self._lkp_x:.2f}, {self._lkp_y:.2f})')
             self._reset_search()
+            self._init_pdf()   # start diffusing immediately while en route
 
         if self._visible and self._poacher_received:
             self._lkp_x = self._poacher_x
@@ -230,6 +250,7 @@ class MissionNode(Node):
             self._lkp_time = time.monotonic()
             self._mission_state = STATE_GOTO
             self._last_published_goal = None
+            self._init_pdf()   # start diffusing immediately
             self.get_logger().info(
                 f'LKP seeded: ({self._lkp_x:.2f}, {self._lkp_y:.2f})')
         self._poacher_received = True
@@ -260,12 +281,13 @@ class MissionNode(Node):
     def _reset_search(self) -> None:
         self._mission_state       = STATE_GOTO
         self._in_search           = False
-        self._pdf                 = None
-        self._pdf_cleared         = None
         self._pdf_goal            = None
+        self._pdf_search_start_t  = 0.0
         self._waypoints           = []
         self._wp_idx              = 0
         self._last_published_goal = None
+        # Note: _pdf and _pdf_cleared are NOT reset here —
+        # they are reinitialised by _init_pdf() called after this.
 
     # ─────────────────────────────────────────────────────────────────────────
     # PDF operations
@@ -285,11 +307,37 @@ class MissionNode(Node):
         sigma = 0.1   # near-point at t=0 — diffusion spreads it over time
         dist2 = (XX - self._lkp_x)**2 + (YY - self._lkp_y)**2
         pdf   = np.exp(-dist2 / (2.0 * sigma**2))
-        self._pdf         = pdf / pdf.sum()
-        self._pdf_cleared = np.zeros((n, n), dtype=bool)  # nothing cleared yet
+
+        # Pre-clear all out-of-arena cells
+        cleared = np.zeros((n, n), dtype=bool)
+        for row in range(n):
+            wy = self._pdf_origin_y + (row + 0.5) * self._res
+            for col in range(n):
+                wx = self._pdf_origin_x + (col + 0.5) * self._res
+                if not _in_arena(wx, wy):
+                    cleared[row, col] = True
+                    pdf[row, col]     = 0.0
+
+        total = pdf.sum()
+        self._pdf         = pdf / total if total > 1e-9 else pdf
+        self._pdf_cleared = cleared
         self._pdf_goal    = None
         self._last_diffuse_t = time.monotonic()
         self.get_logger().info('PDF initialised')
+
+    def _apply_arena_mask(self) -> None:
+        """Zero PDF cells outside the hexagonal arena and renormalise."""
+        if self._pdf is None:
+            return
+        for row in range(self._pdf_rows):
+            wy = self._pdf_origin_y + (row + 0.5) * self._res
+            for col in range(self._pdf_cols):
+                wx = self._pdf_origin_x + (col + 0.5) * self._res
+                if not _in_arena(wx, wy):
+                    self._pdf[row, col] = 0.0
+        total = self._pdf.sum()
+        if total > 1e-9:
+            self._pdf /= total
 
     def _diffuse_pdf(self) -> None:
         """
@@ -325,6 +373,7 @@ class MissionNode(Node):
             self._pdf = diffused / total
         else:
             self._pdf = diffused
+        self._apply_arena_mask()
 
     def _erase_scan_sector(self) -> None:
         """
@@ -354,6 +403,7 @@ class MissionNode(Node):
             total = self._pdf.sum()
             if total > 1e-9:
                 self._pdf /= total
+            self._apply_arena_mask()
 
     def _pdf_max(self) -> float:
         if self._pdf is None:
@@ -362,32 +412,38 @@ class MissionNode(Node):
 
     def _pdf_exhausted(self) -> bool:
         """
-        PDF is exhausted when fewer than 1% of cells have any probability
-        mass — meaning scan erasure has confirmed almost everywhere empty.
-        Uses cell count rather than raw max value, which depends on grid size.
+        PDF is exhausted when fewer than 2% of IN-BOUNDS cells have
+        probability mass. Counts only arena-valid cells to avoid false
+        triggers when much of the grid is outside the arena.
         """
         if self._pdf is None:
             return True
-        nonzero = np.count_nonzero(self._pdf > 1e-9)
-        total   = self._pdf_rows * self._pdf_cols
-        return nonzero < max(1, int(0.01 * total))
 
-    def _best_pdf_goal(self) -> tuple | None:
-        """Highest-probability in-bounds cell."""
-        if self._pdf is None:
-            return None
-        masked = self._pdf.copy()
+        total_in_arena   = 0
+        nonzero_in_arena = 0
         for row in range(self._pdf_rows):
             wy = self._pdf_origin_y + (row + 0.5) * self._res
             for col in range(self._pdf_cols):
                 wx = self._pdf_origin_x + (col + 0.5) * self._res
-                if not (ARENA_X_MIN <= wx <= ARENA_X_MAX
-                        and ARENA_Y_MIN <= wy <= ARENA_Y_MAX):
-                    masked[row, col] = 0.0
-        if masked.max() <= 0.0:
+                if _in_arena(wx, wy):
+                    total_in_arena += 1
+                    if self._pdf[row, col] > 1e-9:
+                        nonzero_in_arena += 1
+
+        if total_in_arena == 0:
+            return True
+        fraction = nonzero_in_arena / total_in_arena
+        self.get_logger().debug(
+            f'PDF: {nonzero_in_arena}/{total_in_arena} in-arena cells '
+            f'({fraction*100:.1f}%)')
+        return fraction < 0.02
+
+    def _best_pdf_goal(self) -> tuple | None:
+        """Highest-probability cell (arena bounds already enforced on PDF)."""
+        if self._pdf is None or self._pdf.max() <= 0.0:
             return None
-        idx      = np.argmax(masked)
-        row, col = divmod(int(idx), self._pdf_cols)
+        idx      = int(np.argmax(self._pdf))
+        row, col = divmod(idx, self._pdf_cols)
         return (self._pdf_origin_x + (col + 0.5) * self._res,
                 self._pdf_origin_y + (row + 0.5) * self._res)
 
@@ -412,8 +468,8 @@ class MissionNode(Node):
         wx = self._costmap_origin_x + (cols + 0.5) * self._costmap_res
         wy = self._costmap_origin_y + (rows + 0.5) * self._costmap_res
 
-        in_bounds = ((wx >= ARENA_X_MIN) & (wx <= ARENA_X_MAX) &
-                     (wy >= ARENA_Y_MIN) & (wy <= ARENA_Y_MAX))
+        in_bounds = np.array([_in_arena(float(x), float(y))
+                              for x, y in zip(wx.tolist(), wy.tolist())])
         wx, wy = wx[in_bounds], wy[in_bounds]
 
         if len(wx) == 0:
@@ -454,6 +510,11 @@ class MissionNode(Node):
             goal = (self._poacher_x, self._poacher_y)
 
         else:
+            # Always diffuse and erase while not tracking —
+            # PDF should spread and shrink even while en route to LKP
+            self._diffuse_pdf()
+            self._erase_scan_sector()
+
             # ── GOTO LKP ─────────────────────────────────────────────────────
             if not self._in_search:
                 dist_lkp = math.hypot(
@@ -464,25 +525,27 @@ class MissionNode(Node):
                     goal = (self._lkp_x, self._lkp_y)
                 else:
                     self._in_search = True
-                    self._init_pdf()
+                    self._pdf_search_start_t = time.monotonic()
                     self.get_logger().info('Arrived at LKP — starting PDF search')
 
             if self._in_search:
                 # ── Phase A: PDF search ───────────────────────────────────────
                 if self._mission_state != STATE_WAYPOINT:
                     self._mission_state = STATE_PDF
-                    self._diffuse_pdf()
-                    self._erase_scan_sector()
 
-                    if self._pdf_exhausted():
-                        # PDF exhausted — switch to waypoint phase
-                        self.get_logger().info('PDF exhausted — building waypoint list')
+                    pdf_time_elapsed = time.monotonic() - self._pdf_search_start_t
+                    pdf_timed_out    = pdf_time_elapsed > self._pdf_search_timeout
+
+                    if self._pdf_exhausted() or pdf_timed_out:
+                        reason = 'timed out' if pdf_timed_out else 'exhausted'
+                        self.get_logger().info(
+                            f'PDF {reason} ({pdf_time_elapsed:.0f}s)'
+                            f' — building waypoint list')
                         self._build_waypoints()
                         self._mission_state = STATE_WAYPOINT
                         self._pdf_goal = None
 
                     else:
-                        # Pick new PDF goal only when needed
                         if self._pdf_goal is None:
                             self._pdf_goal = self._best_pdf_goal()
                         else:
@@ -490,8 +553,7 @@ class MissionNode(Node):
                                 self._drone_x - self._pdf_goal[0],
                                 self._drone_y - self._pdf_goal[1])
                             if dist < self._arr_r:
-                                self.get_logger().info(
-                                    f'PDF goal reached — picking next')
+                                self.get_logger().info('PDF goal reached — picking next')
                                 self._pdf_goal = self._best_pdf_goal()
 
                         goal = self._pdf_goal or (self._lkp_x, self._lkp_y)
