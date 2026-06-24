@@ -15,6 +15,9 @@ Publishes
                                            (robot frame, 0 = straight ahead)
   /detection_marker   visualization_msgs/Marker
                       Green line = visible, Red line = occluded
+  /poacher_caught     std_msgs/Bool        Latched True once drone↔poacher
+                                           distance drops below capture_dist.
+                                           Published every tick once latched.
 
 Subscribes
 ----------
@@ -28,10 +31,37 @@ Parameters
   los_tolerance   float  m  how much closer than the poacher a beam can
                             read before the poacher is considered occluded
                             (default 0.3 – accounts for poacher body size)
-  max_range       float  m  max detection range (default 3.5)
+  max_range       float  m  max detection range (default 1.0)
+  capture_dist    float  m  drone↔poacher distance that counts as "caught"
+                            (default 0.3). Uses raw distance, independent of
+                            line-of-sight.
+  launch_kpi_recorder  bool  auto-start kpi_recorder_node.py as a subprocess
+                              alongside this node (default True)
+  kpi_recorder_path    str   path to kpi_recorder_node.py
+                              (default '' = same folder as this file)
+
+Note – capture & shutdown
+--------------------------
+  On startup this node launches kpi_recorder_node.py as a subprocess
+  (unless launch_kpi_recorder:=false).
+
+  Once drone↔poacher distance drops below capture_dist, this node:
+    1. Publishes /poacher_caught = True (kpi_recorder_node listens for
+       this, saves its session JSON, and shuts itself down).
+    2. Shuts ITSELF down a moment later, so the test ends cleanly with
+       both processes stopped and the KPI file saved.
+
+  The capture check only runs once real odometry has been received for
+  BOTH the drone and the poacher – otherwise their (0,0)/(0,0) placeholder
+  defaults would read as dist=0.0 and falsely trigger capture on the very
+  first tick, before the sim has even started publishing.
 """
 
 import math
+import os
+import signal
+import subprocess
+import sys
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
@@ -53,9 +83,15 @@ class PoacherDetectionNode(Node):
         self.declare_parameter('poacher_spawn_y', 0.0)
         self.declare_parameter('drone_spawn_x',  -2.0)
         self.declare_parameter('drone_spawn_y',  -0.5)
+        self.declare_parameter('capture_dist',    0.3)
+        self.declare_parameter('launch_kpi_recorder', True)
+        self.declare_parameter('kpi_recorder_path', '')   # '' = same folder as this file
 
         self._tol       = self.get_parameter('los_tolerance').value
         self._max_range = self.get_parameter('max_range').value   # used for ALL range checks
+        self._capture_dist = self.get_parameter('capture_dist').value
+        self._caught:    bool = False     # latches True, never resets
+        self._kpi_proc: subprocess.Popen | None = None
 
         # Offset to convert poacher local odom → drone world frame
         self._poacher_offset_x = (self.get_parameter('poacher_spawn_x').value
@@ -67,6 +103,7 @@ class PoacherDetectionNode(Node):
         self._drone_x:   float = 0.0
         self._drone_y:   float = 0.0
         self._drone_yaw: float = 0.0
+        self._drone_received: bool = False
 
         # Poacher state
         self._poacher_x:        float = 0.0
@@ -93,13 +130,52 @@ class PoacherDetectionNode(Node):
         self._vis_pub    = self.create_publisher(Bool,    '/poacher_visible',  10)
         self._bear_pub   = self.create_publisher(Float64, '/poacher_bearing',  10)
         self._marker_pub = self.create_publisher(Marker,  '/detection_marker', 10)
+        self._caught_pub = self.create_publisher(Bool,    '/poacher_caught',   10)
 
         self.create_timer(0.1, self._update)
 
         self.get_logger().info(
             f'PoacherDetectionNode ready  |  '
-            f'max_range={self._max_range} m  los_tolerance={self._tol} m'
+            f'max_range={self._max_range} m  los_tolerance={self._tol} m  '
+            f'capture_dist={self._capture_dist} m'
         )
+
+        if self.get_parameter('launch_kpi_recorder').value:
+            self._launch_kpi_recorder()
+
+    # -----------------------------------------------------------------------
+    def _launch_kpi_recorder(self) -> None:
+        """Start kpi_recorder_node.py as a subprocess alongside detection."""
+        custom_path = self.get_parameter('kpi_recorder_path').value
+        if custom_path:
+            kpi_path = custom_path
+        else:
+            kpi_path = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), 'kpi_recorder_node.py'
+            )
+
+        if not os.path.isfile(kpi_path):
+            self.get_logger().warn(
+                f'KPI recorder not started – file not found: {kpi_path}'
+            )
+            return
+
+        self._kpi_proc = subprocess.Popen(
+            [sys.executable, kpi_path],
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
+        self.get_logger().info(f'KpiRecorderNode launched (pid={self._kpi_proc.pid})')
+
+    def destroy_node(self) -> None:
+        """Make sure the KPI recorder shuts down (and saves) with us."""
+        if self._kpi_proc is not None and self._kpi_proc.poll() is None:
+            self._kpi_proc.send_signal(signal.SIGINT)
+            try:
+                self._kpi_proc.wait(timeout=3.0)
+            except subprocess.TimeoutExpired:
+                self._kpi_proc.kill()
+        super().destroy_node()
 
     # -----------------------------------------------------------------------
     def _drone_cb(self, msg: Odometry) -> None:
@@ -110,6 +186,7 @@ class PoacherDetectionNode(Node):
             2.0 * (q.w * q.z + q.x * q.y),
             1.0 - 2.0 * (q.y ** 2 + q.z ** 2),
         )
+        self._drone_received = True
 
     def _poacher_cb(self, msg: Odometry) -> None:
         self._poacher_x = msg.pose.pose.position.x + self._poacher_offset_x
@@ -134,6 +211,22 @@ class PoacherDetectionNode(Node):
         dx   = self._poacher_x - self._drone_x
         dy   = self._poacher_y - self._drone_y
         dist = math.hypot(dx, dy)
+
+        # Capture check – raw distance only, independent of line-of-sight.
+        # Gated on _drone_received too, on top of the guard above, so this
+        # can never fire on the (0,0)/(0,0) placeholder defaults before
+        # real odometry has arrived for both robots.
+        if self._drone_received and not self._caught and dist < self._capture_dist:
+            self._caught = True
+            self.get_logger().warn(
+                f'POACHER CAUGHT  |  dist={dist:.3f} m < capture_dist={self._capture_dist} m'
+            )
+            self._caught_pub.publish(Bool(data=True))
+            # Give the publish a moment to actually leave this process
+            # before the node (and its executor) goes away.
+            self.create_timer(0.5, self._shutdown_after_capture)
+        elif self._caught:
+            self._caught_pub.publish(Bool(data=True))
 
         # Out of range
         if dist > self._max_range:
@@ -164,6 +257,13 @@ class PoacherDetectionNode(Node):
         visible = beam_range >= (dist - self._tol)
 
         self._publish(visible, robot_bear, dist)
+
+    def _shutdown_after_capture(self) -> None:
+        """Stop this node once capture has been published and given time
+        to be received by kpi_recorder_node."""
+        self.get_logger().warn('Capture confirmed – shutting down detection node.')
+        if rclpy.ok():
+            rclpy.shutdown()
 
     def _publish(self, visible: bool, bearing: float, dist: float) -> None:
         # Bool
@@ -215,7 +315,8 @@ def main(args=None) -> None:
         pass
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == '__main__':

@@ -73,7 +73,9 @@ def _in_arena(wx: float, wy: float) -> bool:
     if (ARENA_X_MAX - wx) + (ARENA_Y_MAX - wy) < CLIP: return False  # top-right
     return True
 
-# ── Costmap thresholds ────────────────────────────────────────────────────────
+# ── Heuristic waypoint bounds (rectangle, independent of PDF arena) ───────────
+HEURISTIC_X_MIN, HEURISTIC_X_MAX = 0.5,  3.5
+HEURISTIC_Y_MIN, HEURISTIC_Y_MAX = 0.0,  3.0
 COST_OBS_MIN = 50.0
 
 # ── States ────────────────────────────────────────────────────────────────────
@@ -458,7 +460,9 @@ class MissionNode(Node):
 
         obs_mask  = self._costmap_data >= COST_OBS_MIN
         unvisited = self._costmap_data == 0.0
-        fringe    = binary_dilation(obs_mask) & unvisited & ~obs_mask
+
+        # Dilate by 2 cells (0.2 m clearance from obstacle surface)
+        fringe = binary_dilation(obs_mask, iterations=2) & unvisited & ~obs_mask
 
         if not np.any(fringe):
             self.get_logger().warn('No fringe cells found')
@@ -468,9 +472,14 @@ class MissionNode(Node):
         wx = self._costmap_origin_x + (cols + 0.5) * self._costmap_res
         wy = self._costmap_origin_y + (rows + 0.5) * self._costmap_res
 
-        in_bounds = np.array([_in_arena(float(x), float(y))
-                              for x, y in zip(wx.tolist(), wy.tolist())])
-        wx, wy = wx[in_bounds], wy[in_bounds]
+        # Filter to a loose outer boundary before clamping — excludes fringe
+        # cells far outside the arena that would all clamp to the same edge point
+        loose_margin = 1.0
+        in_loose = np.array([
+            (HEURISTIC_X_MIN - loose_margin) <= float(x) <= (HEURISTIC_X_MAX + loose_margin) and
+            (HEURISTIC_Y_MIN - loose_margin) <= float(y) <= (HEURISTIC_Y_MAX + loose_margin)
+            for x, y in zip(wx.tolist(), wy.tolist())])
+        wx, wy = wx[in_loose], wy[in_loose]
 
         if len(wx) == 0:
             self.get_logger().warn('No in-bounds fringe cells')
@@ -480,16 +489,27 @@ class MissionNode(Node):
         order = np.argsort(dists)
         wx, wy = wx[order], wy[order]
 
+        # Deduplicate with larger spacing to keep list manageable
+        MIN_SPACING = 0.8   # m between kept waypoints
+        MAX_POINTS  = 12
+
         kept: list[tuple] = []
         for x, y in zip(wx.tolist(), wy.tolist()):
-            if not any(math.hypot(x - kx, y - ky) < self._arr_r
+            # Clamp to heuristic bounds before dedup check
+            x = max(HEURISTIC_X_MIN, min(HEURISTIC_X_MAX, x))
+            y = max(HEURISTIC_Y_MIN, min(HEURISTIC_Y_MAX, y))
+            if not any(math.hypot(x - kx, y - ky) < MIN_SPACING
                        for kx, ky in kept):
                 kept.append((x, y))
+            if len(kept) >= MAX_POINTS:
+                break
+
+        # Clear old waypoint markers from RViz before publishing new list
+        self._clear_waypoint_markers(len(self._waypoints))
 
         self._waypoints = kept
         self._wp_idx    = 0
-        self.get_logger().info(
-            f'Waypoint list ({len(kept)} points):')
+        self.get_logger().info(f'Waypoint list ({len(kept)} points):')
         for i, (x, y) in enumerate(kept):
             self.get_logger().info(
                 f'  [{i}]  ({x:.2f}, {y:.2f})  '
@@ -698,6 +718,16 @@ class MissionNode(Node):
         m.header.frame_id = 'odom'
         m.action          = Marker.DELETEALL
         self._marker_pub.publish(m)
+
+    def _clear_waypoint_markers(self, count: int) -> None:
+        """Delete all previously published waypoint cube markers."""
+        for i in range(count):
+            m = Marker()
+            m.header.stamp    = self.get_clock().now().to_msg()
+            m.header.frame_id = 'odom'
+            m.ns, m.id        = 'waypoints', i
+            m.action          = Marker.DELETE
+            self._marker_pub.publish(m)
 
 
 def main(args=None) -> None:

@@ -16,6 +16,16 @@ Controls (teleop_twist_keyboard):
   q / z – increase / decrease speed
 
 The keyboard window must have focus for commands to register.
+
+Note – speed cap
+-----------------
+teleop_twist_keyboard's own 'speed' parameter only sets the STARTING
+linear speed; pressing 'q' still lets the operator increase it past any
+configured value, so this is a soft starting point, not a hard ceiling.
+POACHER_MAX_SPEED below is intended to match the Nav2 cap in
+nav2_poacher_params.yaml (FollowPath.max_vel_x / velocity_smoother
+max_velocity[0]) and the poacher_max_speed passed to kpi_recorder_node.py,
+so change it in all three places together between iterations.
 """
 
 import os
@@ -41,6 +51,13 @@ POACHER_X = '2.0'
 POACHER_Y = '0.0'
 DRONE_X   = '-2.0'
 DRONE_Y   = '-0.5'
+
+# ── POACHER SPEED CAP – change this between iterations ──────────────────────
+# Sets teleop_twist_keyboard's STARTING linear speed (it's a soft cap – see
+# the module docstring above). Keep in sync with nav2_poacher_params.yaml
+# and kpi_recorder_node.py's poacher_max_speed parameter.
+POACHER_MAX_SPEED = 0.18   # m/s
+POACHER_MAX_TURN  = 1.0    # rad/s – unchanged from teleop_twist_keyboard default
 
 with open(URDF_FILE, 'r') as f:
     ROBOT_DESC = f.read()
@@ -110,6 +127,10 @@ def generate_launch_description():
         package='teleop_twist_keyboard',
         executable='teleop_twist_keyboard',
         name='poacher_teleop',
+        parameters=[{
+            'speed': POACHER_MAX_SPEED,
+            'turn':  POACHER_MAX_TURN,
+        }],
         remappings=[('/cmd_vel', '/poacher/cmd_vel')],
         output='screen',
         prefix='xterm -e',   # opens in its own window so keyboard focus works

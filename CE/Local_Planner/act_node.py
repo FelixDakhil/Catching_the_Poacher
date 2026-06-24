@@ -16,6 +16,13 @@ Responsibilities
   brake is active so angular velocity is preserved during obstacle avoidance.
 * Publish geometry_msgs/TwistStamped on /cmd_vel at a fixed rate (default 10 Hz).
 
+Note
+----
+  Capture (/poacher_caught from poacher_detection_node) is NOT handled here.
+  It's purely a reporting signal – kpi_recorder_node listens for it to stop
+  recording, but it has no effect on actuation. The drone keeps moving
+  under the planner's commands even after capture; nothing here brakes it.
+
 Parameters
 ----------
   publish_rate      float  Hz for the output timer          (default 10.0)
@@ -23,9 +30,9 @@ Parameters
   use_stamped       bool   True → TwistStamped, False → Twist (default True)
   base_frame        str    header frame_id                  (default "base_footprint")
   max_linear_vel    float  m/s clamp                        (default 0.22)
-  max_angular_vel   float  rad/s clamp                      (default 2.84)
-  brake_dist        float  m  front-clearance threshold     (default 0.25)
-  brake_cone_deg    float  half-angle of front cone (deg)   (default 30.0)
+  max_angular_vel   float  rad/s clamp                       (default 2.84)
+  brake_dist        float  m  front-clearance threshold      (default 0.25)
+  brake_cone_deg    float  half-angle of front cone (deg)    (default 30.0)
 """
 
 import math
@@ -35,7 +42,7 @@ from rclpy.time import Time
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 
 from geometry_msgs.msg import TwistStamped, Twist
-from std_msgs.msg import Float32MultiArray, Float64MultiArray
+from std_msgs.msg import Bool, Float32MultiArray, Float64MultiArray
 
 
 # ---------------------------------------------------------------------------
@@ -103,11 +110,15 @@ class ActNode(Node):
         self.create_subscription(
             Float64MultiArray, "/scan_metadata",  self._meta_cb, 10)
 
-        # ---- publisher ----------------------------------------------------
+        # ---- publishers ---------------------------------------------------
         if self._stamped:
             self._vel_pub = self.create_publisher(TwistStamped, "/cmd_vel", 10)
         else:
             self._vel_pub = self.create_publisher(Twist, "/cmd_vel", 10)
+
+        # Rising-edge brake event – True when brake first engages.
+        # kpi_recorder_node listens to this to count brake events.
+        self._brake_event_pub = self.create_publisher(Bool, "/brake_event", 10)
 
         self._timer = self.create_timer(1.0 / self._rate, self._publish_cb)
 
@@ -148,6 +159,8 @@ class ActNode(Node):
                 f"BRAKE: obstacle < {self._brake_d} m "
                 f"in ±{math.degrees(self._brake_cone):.0f}° cone – lin zeroed"
             )
+            # Rising edge → notify KPI recorder
+            self._brake_event_pub.publish(Bool(data=True))
         elif not blocked and self._brake_active:
             self.get_logger().info("BRAKE released – forward motion restored")
 
