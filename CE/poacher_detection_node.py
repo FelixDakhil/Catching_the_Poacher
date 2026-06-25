@@ -78,7 +78,7 @@ class PoacherDetectionNode(Node):
         super().__init__('poacher_detection_node')
 
         self.declare_parameter('los_tolerance',   0.3)
-        self.declare_parameter('max_range',       3.5)   #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        self.declare_parameter('max_range',       1.0)   #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         self.declare_parameter('poacher_spawn_x', 2.0)
         self.declare_parameter('poacher_spawn_y', 0.0)
         self.declare_parameter('drone_spawn_x',  -2.0)

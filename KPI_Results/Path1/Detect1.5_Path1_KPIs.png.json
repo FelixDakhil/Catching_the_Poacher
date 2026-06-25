@@ -1,0 +1,1791 @@
+{
+  "meta": {
+    "session_start": "2026-06-25_02-45-22",
+    "duration_s": 43.44,
+    "sample_rate_hz": 5.0,
+    "total_samples": 216,
+    "poacher_max_speed": 0.18,
+    "was_captured": true
+  },
+  "scalars": {
+    "time_to_first_detection_s": 26.835835933685303,
+    "brake_events_total": 0,
+    "times_poacher_lost": 0,
+    "distance_stats_m": {
+      "min": 0.4519,
+      "max": 3.8425,
+      "mean": 1.8809
+    },
+    "drone_speed_stats_mps": {
+      "min": 0.0,
+      "max": 0.15,
+      "mean": 0.1367
+    },
+    "poacher_speed_stats_mps": {
+      "min": 0.0,
+      "max": 0.15,
+      "mean": 0.1151
+    },
+    "time_per_mission_state_s": {
+      "UNKNOWN": 2.0,
+      "GOTO_LKP": 25.4,
+      "TRACK": 15.8
+    },
+    "time_per_phase_s": {
+      "tracking": 15.8,
+      "goto_lkp": 25.4,
+      "pdf_search": 0.0,
+      "heuristic": 0.0
+    },
+    "phase_percentages": {
+      "tracking": 36.57,
+      "goto_lkp": 58.8,
+      "pdf_search": 0.0,
+      "heuristic": 0.0
+    }
+  },
+  "events": [
+    {
+      "t": 26.835835933685303,
+      "event": "first_detection"
+    },
+    {
+      "t": 26.835835933685303,
+      "event": "poacher_reacquired"
+    },
+    {
+      "t": 43.43930196762085,
+      "event": "poacher_caught"
+    }
+  ],
+  "time_series": [
+    {
+      "t": 0.37,
+      "distance": 3.8425,
+      "drone_speed": 0.0895,
+      "poacher_speed": 0.1342,
+      "poacher_visible": false,
+      "mission_state": "UNKNOWN"
+    },
+    {
+      "t": 0.57,
+      "distance": 3.8191,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "UNKNOWN"
+    },
+    {
+      "t": 0.77,
+      "distance": 3.7943,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": false,
+      "mission_state": "UNKNOWN"
+    },
+    {
+      "t": 0.97,
+      "distance": 3.7699,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": false,
+      "mission_state": "UNKNOWN"
+    },
+    {
+      "t": 1.17,
+      "distance": 3.7618,
+      "drone_speed": 0.0225,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "UNKNOWN"
+    },
+    {
+      "t": 1.37,
+      "distance": 3.7455,
+      "drone_speed": 0.1425,
+      "poacher_speed": 0.1342,
+      "poacher_visible": false,
+      "mission_state": "UNKNOWN"
+    },
+    {
+      "t": 1.57,
+      "distance": 3.7425,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": false,
+      "mission_state": "UNKNOWN"
+    },
+    {
+      "t": 1.77,
+      "distance": 3.7037,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1458,
+      "poacher_visible": false,
+      "mission_state": "UNKNOWN"
+    },
+    {
+      "t": 1.97,
+      "distance": 3.6843,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "UNKNOWN"
+    },
+    {
+      "t": 2.17,
+      "distance": 3.6615,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": false,
+      "mission_state": "UNKNOWN"
+    },
+    {
+      "t": 2.37,
+      "distance": 3.6428,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1263,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 2.57,
+      "distance": 3.6203,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 2.77,
+      "distance": 3.5978,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 2.969,
+      "distance": 3.5755,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 3.17,
+      "distance": 3.5532,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 3.37,
+      "distance": 3.531,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 3.57,
+      "distance": 3.5128,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 3.769,
+      "distance": 3.4912,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 3.97,
+      "distance": 3.4729,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 4.17,
+      "distance": 3.4513,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 4.37,
+      "distance": 3.4306,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1263,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 4.569,
+      "distance": 3.4086,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 4.77,
+      "distance": 3.3909,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 4.969,
+      "distance": 3.3699,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1263,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 5.17,
+      "distance": 3.3524,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 5.37,
+      "distance": 3.3311,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 5.569,
+      "distance": 3.3101,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 5.77,
+      "distance": 3.2893,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1491,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 5.97,
+      "distance": 3.2683,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 6.17,
+      "distance": 3.2479,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 6.37,
+      "distance": 3.2302,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1497,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 6.569,
+      "distance": 3.2094,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 6.77,
+      "distance": 3.1888,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 6.97,
+      "distance": 3.1682,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 7.169,
+      "distance": 3.1509,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 7.37,
+      "distance": 3.1302,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 7.569,
+      "distance": 3.113,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 7.77,
+      "distance": 3.0958,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 7.97,
+      "distance": 3.075,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 8.17,
+      "distance": 3.0539,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 8.369,
+      "distance": 3.0325,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 8.57,
+      "distance": 3.011,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 8.77,
+      "distance": 2.9895,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1263,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 8.969,
+      "distance": 2.968,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1184,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 9.17,
+      "distance": 2.9455,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 9.369,
+      "distance": 2.9221,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 9.569,
+      "distance": 2.8985,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 9.77,
+      "distance": 2.8894,
+      "drone_speed": 0.0,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 9.969,
+      "distance": 2.8822,
+      "drone_speed": 0.0,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 10.17,
+      "distance": 2.8749,
+      "drone_speed": 0.0,
+      "poacher_speed": 0.1342,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 10.369,
+      "distance": 2.8683,
+      "drone_speed": 0.0255,
+      "poacher_speed": 0.1497,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 10.57,
+      "distance": 2.8494,
+      "drone_speed": 0.1455,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 10.769,
+      "distance": 2.8237,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 10.969,
+      "distance": 2.8023,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 11.169,
+      "distance": 2.7758,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 11.37,
+      "distance": 2.7489,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 11.57,
+      "distance": 2.7219,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 11.77,
+      "distance": 2.6942,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 11.969,
+      "distance": 2.6668,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 12.169,
+      "distance": 2.6399,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1263,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 12.369,
+      "distance": 2.6118,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 12.569,
+      "distance": 2.5836,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 12.769,
+      "distance": 2.5559,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1263,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 12.97,
+      "distance": 2.5324,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1184,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 13.17,
+      "distance": 2.5057,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.13,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 13.369,
+      "distance": 2.477,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1263,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 13.57,
+      "distance": 2.4461,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1263,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 13.77,
+      "distance": 2.4158,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1105,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 13.969,
+      "distance": 2.3892,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1026,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 14.169,
+      "distance": 2.3642,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0632,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 14.37,
+      "distance": 2.3383,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1491,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 14.57,
+      "distance": 2.321,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0016,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 14.77,
+      "distance": 2.3046,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 14.97,
+      "distance": 2.2855,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 15.169,
+      "distance": 2.272,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 15.37,
+      "distance": 2.2558,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 15.57,
+      "distance": 2.2396,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 15.769,
+      "distance": 2.2361,
+      "drone_speed": 0.0,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 15.97,
+      "distance": 2.2361,
+      "drone_speed": 0.0,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 16.17,
+      "distance": 2.2361,
+      "drone_speed": 0.0,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 16.37,
+      "distance": 2.2351,
+      "drone_speed": 0.0425,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 16.569,
+      "distance": 2.2237,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 16.769,
+      "distance": 2.2104,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 16.97,
+      "distance": 2.1943,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 17.17,
+      "distance": 2.1782,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 17.369,
+      "distance": 2.1621,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 17.57,
+      "distance": 2.1486,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 17.77,
+      "distance": 2.1326,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 17.97,
+      "distance": 2.1166,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 18.17,
+      "distance": 2.0982,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 18.37,
+      "distance": 2.0849,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 18.569,
+      "distance": 2.069,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 18.769,
+      "distance": 2.0506,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 18.97,
+      "distance": 2.0376,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 19.17,
+      "distance": 2.022,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 19.369,
+      "distance": 2.0064,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 19.57,
+      "distance": 1.9907,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 19.769,
+      "distance": 1.975,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 19.97,
+      "distance": 1.9593,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 20.17,
+      "distance": 1.9438,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 20.37,
+      "distance": 1.9285,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 20.569,
+      "distance": 1.9132,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 20.77,
+      "distance": 1.8998,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0395,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 20.969,
+      "distance": 1.8895,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.04,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 21.169,
+      "distance": 1.8788,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0395,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 21.37,
+      "distance": 1.8671,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0316,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 21.569,
+      "distance": 1.8573,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0316,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 21.77,
+      "distance": 1.8439,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0316,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 21.97,
+      "distance": 1.8325,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0316,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 22.17,
+      "distance": 1.8238,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0789,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 22.369,
+      "distance": 1.8154,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0711,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 22.569,
+      "distance": 1.8057,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0632,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 22.769,
+      "distance": 1.7988,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1026,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 22.97,
+      "distance": 1.7898,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.0947,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 23.17,
+      "distance": 1.7797,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1184,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 23.37,
+      "distance": 1.7695,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1263,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 23.57,
+      "distance": 1.7587,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 23.77,
+      "distance": 1.7582,
+      "drone_speed": 0.0,
+      "poacher_speed": 0.1342,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 23.97,
+      "distance": 1.7582,
+      "drone_speed": 0.0,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 24.17,
+      "distance": 1.756,
+      "drone_speed": 0.0395,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 24.369,
+      "distance": 1.7439,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 24.569,
+      "distance": 1.7263,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 24.769,
+      "distance": 1.7076,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 24.97,
+      "distance": 1.6883,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 25.17,
+      "distance": 1.6684,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 25.37,
+      "distance": 1.6479,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 25.57,
+      "distance": 1.6273,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 25.77,
+      "distance": 1.6062,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 25.97,
+      "distance": 1.5852,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 26.17,
+      "distance": 1.5637,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 26.37,
+      "distance": 1.5419,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 26.57,
+      "distance": 1.5236,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 26.77,
+      "distance": 1.5016,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": false,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 26.97,
+      "distance": 1.4802,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": true,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 27.169,
+      "distance": 1.4584,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 27.37,
+      "distance": 1.4373,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": true,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 27.569,
+      "distance": 1.4168,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "GOTO_LKP"
+    },
+    {
+      "t": 27.769,
+      "distance": 1.4006,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1105,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 27.97,
+      "distance": 1.3773,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 28.17,
+      "distance": 1.3606,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 28.37,
+      "distance": 1.3413,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 28.57,
+      "distance": 1.3232,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 28.77,
+      "distance": 1.2979,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 28.97,
+      "distance": 1.2712,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 29.169,
+      "distance": 1.2445,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1263,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 29.37,
+      "distance": 1.2168,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 29.569,
+      "distance": 1.1898,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 29.77,
+      "distance": 1.1635,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1263,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 29.969,
+      "distance": 1.1372,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 30.169,
+      "distance": 1.1108,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 30.37,
+      "distance": 1.0894,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 30.57,
+      "distance": 1.0636,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 30.771,
+      "distance": 1.0328,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1413,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 30.97,
+      "distance": 1.0073,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 31.17,
+      "distance": 0.9861,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 31.37,
+      "distance": 0.9572,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 31.57,
+      "distance": 0.9352,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 31.77,
+      "distance": 0.9106,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 31.97,
+      "distance": 0.8857,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 32.17,
+      "distance": 0.8618,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 32.37,
+      "distance": 0.8384,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 32.57,
+      "distance": 0.8158,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 32.77,
+      "distance": 0.7924,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1334,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 32.97,
+      "distance": 0.774,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 33.17,
+      "distance": 0.7519,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 33.37,
+      "distance": 0.7307,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 33.57,
+      "distance": 0.7101,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1263,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 33.77,
+      "distance": 0.7048,
+      "drone_speed": 0.0,
+      "poacher_speed": 0.1421,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 33.97,
+      "distance": 0.7028,
+      "drone_speed": 0.0,
+      "poacher_speed": 0.1342,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 34.17,
+      "distance": 0.7014,
+      "drone_speed": 0.0,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 34.37,
+      "distance": 0.6997,
+      "drone_speed": 0.0325,
+      "poacher_speed": 0.1421,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 34.57,
+      "distance": 0.6878,
+      "drone_speed": 0.1497,
+      "poacher_speed": 0.1342,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 34.77,
+      "distance": 0.6704,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 34.97,
+      "distance": 0.6536,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 35.169,
+      "distance": 0.6376,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 35.369,
+      "distance": 0.6221,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1266,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 35.57,
+      "distance": 0.6099,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 35.77,
+      "distance": 0.6094,
+      "drone_speed": 0.0,
+      "poacher_speed": 0.1342,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 35.969,
+      "distance": 0.6129,
+      "drone_speed": 0.0,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 36.17,
+      "distance": 0.6179,
+      "drone_speed": 0.0,
+      "poacher_speed": 0.1421,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 36.369,
+      "distance": 0.6215,
+      "drone_speed": 0.0405,
+      "poacher_speed": 0.1342,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 36.569,
+      "distance": 0.6147,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 36.77,
+      "distance": 0.604,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 36.97,
+      "distance": 0.5954,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 37.17,
+      "distance": 0.5854,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 37.371,
+      "distance": 0.5765,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 37.57,
+      "distance": 0.5676,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 37.77,
+      "distance": 0.56,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1263,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 37.97,
+      "distance": 0.5524,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 38.17,
+      "distance": 0.5462,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 38.37,
+      "distance": 0.5387,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1263,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 38.57,
+      "distance": 0.5326,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 38.77,
+      "distance": 0.5267,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 38.97,
+      "distance": 0.5205,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1263,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 39.17,
+      "distance": 0.5157,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 39.37,
+      "distance": 0.5108,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 39.57,
+      "distance": 0.5053,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1263,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 39.769,
+      "distance": 0.5014,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 39.97,
+      "distance": 0.4982,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 40.17,
+      "distance": 0.4936,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1263,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 40.37,
+      "distance": 0.4905,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 40.57,
+      "distance": 0.4874,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 40.77,
+      "distance": 0.4834,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1263,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 40.969,
+      "distance": 0.4799,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 41.169,
+      "distance": 0.4773,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 41.369,
+      "distance": 0.4739,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 41.57,
+      "distance": 0.471,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 41.769,
+      "distance": 0.4691,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 41.97,
+      "distance": 0.4661,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1334,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 42.169,
+      "distance": 0.4639,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 42.369,
+      "distance": 0.4628,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 42.57,
+      "distance": 0.4604,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 42.77,
+      "distance": 0.4578,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.15,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 42.97,
+      "distance": 0.4567,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1421,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 43.17,
+      "distance": 0.4546,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1342,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    },
+    {
+      "t": 43.369,
+      "distance": 0.4519,
+      "drone_speed": 0.15,
+      "poacher_speed": 0.1263,
+      "poacher_visible": true,
+      "mission_state": "TRACK"
+    }
+  ]
+}
