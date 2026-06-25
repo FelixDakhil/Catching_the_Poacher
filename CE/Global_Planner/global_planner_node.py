@@ -134,11 +134,8 @@ class DStarLite:
 
         g_s = self._g.get(self._start, INF)
         g_g = self._g.get(self._goal,  INF)
-        print(f'[DEBUG] after compute: g(start)={g_s:.3f}  g(goal)={g_g:.3f}  '
-              f'rhs(goal)={self._rhs.get(self._goal, INF):.3f}', flush=True)
 
         if g_s >= 1e8:
-            print('[DEBUG] start unreachable', flush=True)
             return []
 
         # Greedy trace start → goal following minimum cost+g
@@ -161,8 +158,6 @@ class DStarLite:
                     best_val, best = v, nb
 
             if best is None or best in seen or best_val >= 1e8:
-                print(f'[DEBUG] trace stuck at {current} best_val={best_val:.3f}',
-                      flush=True)
                 return []
 
             path.append(best)
@@ -170,6 +165,14 @@ class DStarLite:
             current = best
 
         return path if current == self._goal else []
+
+    # ── cell cost lookup ──────────────────────────────────────────────────────
+
+    def cell_cost(self, row: int, col: int) -> float:
+        """Public accessor for the raw cost at a cell (used by goal nudging)."""
+        if self._cost is None or not self._in_bounds(row, col):
+            return INF
+        return float(self._cost[row, col])
 
     # ── internals ─────────────────────────────────────────────────────────────
 
@@ -298,9 +301,6 @@ class DStarLite:
                 for nb in self._neighbours(s):
                     self._update_vertex(nb)
 
-        print(f'[DEBUG] _compute: {iters} iterations  '
-              f'heap_size={len(self._heap)}', flush=True)
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ROS2 Node
@@ -383,6 +383,72 @@ class GlobalPlannerNode(Node):
         wy = self._map_origin_y + (row + 0.5) * self._map_res
         return wx, wy
 
+    # ── goal nudging ──────────────────────────────────────────────────────────
+
+    def _nudge_goal_cell(
+        self,
+        start_cell: tuple,
+        goal_cell: tuple,
+        goal_weight: float = 1.0,
+        robot_weight: float = 1.0,
+        max_radius: int = 20,
+    ) -> tuple | None:
+        """
+        If goal_cell is blocked, search outward in expanding square rings
+        for a free cell, scoring each candidate by a WEIGHTED combination
+        of its distance to the goal and its distance to the robot:
+
+            score = goal_weight * dist_to_goal + robot_weight * dist_to_robot
+
+        Lower score wins. With robot_weight > 0, candidates on the robot's
+        side of an obstacle are preferred over geometrically-closer cells
+        that happen to sit on the far side of a wall — without needing a
+        full line-of-sight raycast, since the weighting alone biases the
+        ring search toward the robot.
+
+        Tuning:
+          goal_weight  high  -> stick close to the original goal position
+          robot_weight high  -> prefer cells nearer the robot (safer, but
+                                 may end up further from the intended goal)
+          Equal weights (default) balance the two.
+
+        Returns the original cell unchanged if it's already free.
+        Returns None if nothing free is found within max_radius cells.
+        """
+        gr, gc = goal_cell
+        sr, sc = start_cell
+
+        if self._dstar.cell_cost(gr, gc) < 1e8:
+            return goal_cell   # already free — no nudge needed
+
+        for radius in range(1, max_radius + 1):
+            candidates = []
+
+            for dr in range(-radius, radius + 1):
+                for dc in range(-radius, radius + 1):
+                    # Only the ring boundary — interior already checked
+                    # at smaller radii
+                    if max(abs(dr), abs(dc)) != radius:
+                        continue
+                    r, c = gr + dr, gc + dc
+                    if not self._dstar._in_bounds(r, c):
+                        continue
+                    if self._dstar.cell_cost(r, c) >= 1e8:
+                        continue   # still blocked
+
+                    dist_to_goal  = math.hypot(r - gr, c - gc)
+                    dist_to_robot = math.hypot(r - sr, c - sc)
+                    score = goal_weight * dist_to_goal + robot_weight * dist_to_robot
+
+                    candidates.append((score, r, c))
+
+            if candidates:
+                candidates.sort(key=lambda t: t[0])
+                _, r, c = candidates[0]
+                return (r, c)
+
+        return None   # nothing free within max_radius
+
     # ── /odom ─────────────────────────────────────────────────────────────────
 
     def _odom_cb(self, msg: Odometry) -> None:
@@ -447,11 +513,6 @@ class GlobalPlannerNode(Node):
         if not self._map_loaded:
             self._dstar.set_map(cost_grid)
             self._map_loaded = True
-            #self.get_logger().info(
-            #    f'Costmap loaded: {self._map_cols}x{self._map_rows}  '
-            #    f'res={self._map_res:.3f}m  '
-            #    f'origin=({self._map_origin_x:.1f}, {self._map_origin_y:.1f})'
-            #)
             if self._goal_active:
                 self._spawn_replan()
             return
@@ -468,7 +529,6 @@ class GlobalPlannerNode(Node):
 
     def _spawn_replan(self) -> None:
         if self._planning_now:
-            #self.get_logger().info('Planning already running — skipping')
             return
         self._planning_now = True
         threading.Thread(target=self._do_replan, daemon=True).start()
@@ -499,15 +559,26 @@ class GlobalPlannerNode(Node):
             )
             return
 
-        # Check cell costs before planning
-        sc = float(self._dstar._cost[start_cell[0], start_cell[1]])
-        gc = float(self._dstar._cost[goal_cell[0],  goal_cell[1]])
+        # ── nudge the goal to the nearest free cell if it's blocked ──────────
+        sc = self._dstar.cell_cost(*start_cell)
+        gc = self._dstar.cell_cost(*goal_cell)
 
         if gc >= 1e8:
-            self.get_logger().warn(
-                f'Goal cell {goal_cell} is an obstacle (cost={gc:.0f}). '
+            nudged = self._nudge_goal_cell(start_cell, goal_cell)
+            if nudged is None:
+                self.get_logger().warn(
+                    f'Goal cell {goal_cell} is blocked and no free cell exists '
+                    f'on the line of sight from the robot — goal unreachable.'
+                )
+                return
+
+            nwx, nwy = self._grid_to_world(*nudged)
+            self.get_logger().info(
+                f'Goal cell {goal_cell} was blocked (cost={gc:.0f}) — '
+                f'nudged to {nudged} = ({nwx:.2f}, {nwy:.2f})'
             )
-            return
+            goal_cell = nudged
+            gc = self._dstar.cell_cost(*goal_cell)
 
         self.get_logger().info(
             f'Replanning  start: {start_cell} ({sc:.0f})  '
@@ -520,7 +591,7 @@ class GlobalPlannerNode(Node):
             path_cells = self._dstar.plan()
 
         if not path_cells:
-            #self.get_logger().warn('D* Lite: no path found')
+            self.get_logger().warn('D* Lite: no path found')
             return
 
         self._waypoints = self._cells_to_waypoints(path_cells)
